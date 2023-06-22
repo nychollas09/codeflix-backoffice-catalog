@@ -1,7 +1,6 @@
 package com.fullcycle.admin.catalogo.application.category.create;
 
 import com.fullcycle.admin.catalogo.domain.category.CategoryGateway;
-import com.fullcycle.admin.catalogo.domain.exceptions.DomainException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,7 +40,7 @@ public class CreateCategoryUseCaseTest {
 
         final var useCase = new DefaultCreateCategoryUseCase(categoryGateway);
 
-        final var actualOutput = useCase.execute(aCommand);
+        final var actualOutput = useCase.execute(aCommand).get();
 
         Assertions.assertNotNull(actualOutput);
         Assertions.assertNotNull(actualOutput.id());
@@ -77,12 +76,10 @@ public class CreateCategoryUseCaseTest {
                 expectedIsActive
         );
 
-        final var actualException = Assertions.assertThrows(
-                DomainException.class,
-                () -> this.useCase.execute(aCommand)
-        );
+        final var notification = this.useCase.execute(aCommand).getLeft();
 
-        Assertions.assertEquals(expectedErrorMessage, actualException.getMessage());
+        Assertions.assertEquals(expectedErrorCount, notification.getErrors().size());
+        Assertions.assertEquals(expectedErrorMessage, notification.firstError().message());
         Mockito.verify(
                 this.categoryGateway,
                 Mockito.times(0)
@@ -104,7 +101,7 @@ public class CreateCategoryUseCaseTest {
         Mockito.when(this.categoryGateway.create(Mockito.any()))
                 .thenAnswer(returnsFirstArg());
 
-        final var actualOutput = this.useCase.execute(aCommand);
+        final var actualOutput = this.useCase.execute(aCommand).get();
 
         Assertions.assertNotNull(actualOutput);
         Assertions.assertNotNull(actualOutput.id());
@@ -143,12 +140,10 @@ public class CreateCategoryUseCaseTest {
         Mockito.when(this.categoryGateway.create(Mockito.any()))
                 .thenThrow(new IllegalStateException("Gateway Error"));
 
-        final var actualException = Assertions.assertThrows(
-                IllegalStateException.class,
-                () -> this.useCase.execute(aCommand)
-        );
+        final var notification = this.useCase.execute(aCommand).getLeft();
 
-        Assertions.assertEquals(expectedErrorMessage, actualException.getMessage());
+        Assertions.assertEquals(expectedErrorCount, notification.getErrors().size());
+        Assertions.assertEquals(expectedErrorMessage, notification.firstError().message());
         Mockito.verify(
                 this.categoryGateway,
                 Mockito.times(expectedErrorCount)
